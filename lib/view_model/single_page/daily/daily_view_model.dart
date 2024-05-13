@@ -28,8 +28,32 @@ class DailyViewModel extends _$DailyViewModel {
         DateTime.now().year,
         DateTime.now().month + 2,
       ).add(const Duration(seconds: -1)),
-      scrollController: ScrollController(),
+      offset: 0,
+      scrollController: ScrollController(
+        onDetach: (ScrollPosition position) {
+          debugPrint('detach');
+          changeOffset(position.pixels);
+        },
+        onAttach: (ScrollPosition position) {
+          debugPrint('attach');
+          setOffset(getOffset());
+        },
+      ),
     );
+  }
+
+  double getOffset() {
+    return state.maybeWhen(orElse: () => 0, data: (DailyState value) => value.offset);
+  }
+
+  void changeOffset(double offset) {
+    state.whenData((DailyState data) {
+      state = AsyncData<DailyState>(
+        data.copyWith(
+          offset: offset,
+        ),
+      );
+    });
   }
 
   Future<void> updateSelectedDay({
@@ -250,6 +274,10 @@ class DailyViewModel extends _$DailyViewModel {
         curve: Curves.easeOutCubic,
       );
     });
+  }
+
+  void setOffset(double offset) {
+    state.whenData((DailyState value) => <void>{value.scrollController.jumpTo(value.offset)});
   }
 
   DateTime getAddedSelectedDay(DailyState state, int value) {
